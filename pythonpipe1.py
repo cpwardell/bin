@@ -35,15 +35,22 @@ uid = str(random.random())[2:8] # A 6-digit random integer
 scratchDir="/home/chris_w/tmp/"
 previousjob = "no_previous_job"
 java = "/home/chris_w/apps/jdk1.8.0_20/bin/java"
+python = "/home/chris_w/apps/Python-2.7.8/python"
 picard = "/home/chris_w/apps/picard-tools-1.119/"
+cutadaptbin="/home/chris_w/apps/cutadapt-1.5/bin/cutadapt"
+fwdadapter="AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC"
+revadapter="AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT"
+bwa="/home/chris_w/apps/bwa-0.7.10/bwa"
+refgenome="/home/chris_w/resources/b37/human_g1k_v37.fasta.gz"
 intersectbed = "/home/chris_w/apps/bedtools2/bin/intersectBed"
 coveragebed = "/home/chris_w/apps/bedtools2/bin/coverageBed"
 rdepth = "/home/chris_w/bin/median_depth.R"
-## For whole-genome runs, fake having a target so median-depth still works
+## For whole-genome runs, fake having a target so median-depth calculation using intersectBed still works
 if args.wgs:
     exome = "/home/chris_w/resources/bedfiles/genomic_features/whole_genome_b37d5.bed"
 else:
-    exome = "/home/chris_w/resources/bedfiles/agilent/sureselect/SureSelectV5_target_only.bed"
+    #exome = "/home/chris_w/resources/bedfiles/agilent/sureselect/SureSelectV5_target_only.bed"
+    exome = "/home/chris_w/resources/bedfiles/agilent/sureselect/SureSelectV5_target_only.ext100.bed"
 
 ## MAIN ##
 def main():
@@ -54,14 +61,16 @@ def main():
 	## Execute the steps of the pipeline...
 	logging.debug("Command string is: "+args.p)
 	if "1" in args.p:
-	    cutadapt()
+	    splitter()
 	if "2" in args.p:
-	    align()
+	    cutadapt()
 	if "3" in args.p:
-	    sort()
+	    align()
 	if "4" in args.p:
-	    dedup()
+	    sort()
 	if "5" in args.p:
+	    dedup()
+	if "6" in args.p:
 	    metrics()
 
     except:
@@ -69,39 +78,130 @@ def main():
 	sys.exit()
 ## MAIN END ##
 
+
+## SPLIT AND DECOMPRESS ##
+## Split only if WGS!!
+## Otherwise, decompress the files...
+def splitter():
+    dircreate("split")
+    for directory in args.i:
+        fastqs=thesefiles(directory,".bz2")
+	for fastq in fastqs:
+	    if args.wgs:
+                splitcommand = "bzcat "+directory+"/"+fastq+" | split -l 200000000 - "+fastq+"\n"+\
+                "FILES=* ; for FILE in $FILES ; do mv $FILE $FILE.fastq ; done"
+                logging.debug(splitcommand)
+                jobsubmit(splitcommand,"split.sh","nowait")
+            else:
+                splitcommand = "bzcat "+directory+"/"+fastq+" > "+fastq[0:len(fastq)-4]
+                logging.debug(splitcommand)
+                jobsubmit(splitcommand,"split.sh","nowait")
+
+    if args.wgs:
+        sys.exit("WHOLE GENOME SAMPLE - wait until splitting complete...")
+
+    os.chdir("..")
+## SPLITTER END ##
+
 ## CUTADAPT ##
 def cutadapt():
+    dircreate("cutadapt")
+    decompressedfiles=[]
     if args.wgs:
-	splitter()
+	decompressedfiles = os.listdir("../split/")
+    else:
+	for directory in args.i:
+	    decompressedfiles += thesefiles(directory,".bz2")
+    ones=[]
+    twos=[]
 
-    
+    import sys
 
+    for file in decompressedfiles:
+        if "1.fastq" in file:
+	    ones.append(file)
+	else:
+	    twos.append(file)
+    ones.sort()
+    twos.sort()
     
+    ones=[one.replace(".bz2","") for one in ones]
+    twos=[two.replace(".bz2","") for two in twos]
+
+    for idx,one in enumerate(ones):
+        logging.debug(one+"\t"+twos[idx])
+	cutadaptcommand=python+" "+cutadaptbin+" -q 10 -a "+fwdadapter+\
+	" --minimum-length 70 -f fastq -o "+one+\
+	" -p "+twos[idx]+" ../split/"+one+" ../split/"+twos[idx]+"\n"+\
+	python+" "+cutadaptbin+" -q 10 -a "+revadapter+\
+	" --minimum-length 70 -f fastq -o "+one+".trimmed.gz -p "+\
+	twos[idx]+".trimmed.gz "+one+" "+twos[idx]+"\n"+\
+	"rm "+one+" "+twos[idx] 
+	logging.debug(cutadaptcommand)
+	## Submit job
+	jobsubmit(cutadaptcommand,"cutadapt.sh",args.a+"split.sh*")
+
+    ## Return to base dir
+    os.chdir("..")
 ## CUTADAPT END ##
-
-## SPLITTER ##
-def splitter():
-    pass
-## SPLITTER END ##
 
 ## ALIGNMENT ##
 def align():
+    dircreate("align")
+    trimmedfiles=[]
+    #trimmedfiles = os.listdir("../cutadapt/")
+    if args.wgs:
+	trimmedfiles = os.listdir("../split/")
+    else:
+	for directory in args.i:
+	    trimmedfiles += thesefiles(directory,".bz2")
+    ones=[]
+    twos=[]
+    for file in trimmedfiles:
+	if "1.fastq" in file:
+	    ones.append(file+".trimmed.gz")
+        else:
+	    twos.append(file+".trimmed.gz")
+	ones.sort()
+	twos.sort()
+
+	ones=[one.replace(".bz2","") for one in ones]
+	twos=[two.replace(".bz2","") for two in twos]
+
+    for idx,one in enumerate(ones):
+	logging.debug(one+"\t"+twos[idx])
+	aligncommand=bwa+" mem -R \"@RG\\tID:"+args.a+"\\tSM:"+args.a+"\\t:ILLUMINA\" "+\
+	refgenome+" ../cutadapt/"+one+" ../cutadapt/"+twos[idx]+" > "+str(idx)+".sam\n"
+	logging.debug(aligncommand)
+	## Submit job
+	jobsubmit(aligncommand,"align.sh",args.a+"*cutadapt.sh*")
+    ## Return to base dir
+    os.chdir("..")
+
     #$BWA mem -R "@RG\tID:$OUTPUT\tSM:$OUTPUT\tPL:ILLUMINA" $INDEX $FORWARD $REVERSE > $OUTPUT.sam
-    pass
 ## ALIGNMENT END ##
 
 ## SORT ##
 def sort():
     ## Create directory to work in and descend into it
     dircreate("sort")
-
+    sams=[]
     ## Get list of files to merge and or sort
-    sams = thesefiles("../align/",".sam")
+    if args.wgs:
+	sams = thesefiles("../align/",".sam")
+    else:
+	for directory in args.i:
+	    fastqs = thesefiles(directory,".bz2")
+	countofsams=len(fastqs)/2
+	for count in range(countofsams):
+	    sams.append(str(count)+".sam")
     
     ## Merge and sort the sams
     inputblock=""
     for sam in sams:
 	inputblock += " INPUT=../align/"+sam
+
+    ## WE NEED ONE FILE PER PAIR OF INPUTS
 
     sortcommand = java+" -Djava.io.tmpdir="+scratchDir+\
     " -Xmx4g -jar "+picard+\
@@ -111,7 +211,7 @@ def sort():
     logging.debug("Sort command: "+sortcommand)
     
     ## Submit job
-    jobsubmit(sortcommand,"sort.sh")
+    jobsubmit(sortcommand,"sort.sh",args.a+"align.sh*")
 
     ## Return to base dir
     os.chdir("..")	
@@ -171,16 +271,18 @@ def metrics():
 ## METRICS END ##
 
 ## Writes a command to a shell script and submits it
-def jobsubmit(command,scriptname):
+def jobsubmit(command,scriptname,groupname=None):
     ## Define name of this job
     global previousjob
     thisjob = args.a+scriptname+uid
-
     ## Write and submit script
     script = open(scriptname,"w")
     script.write("#!/bin/bash\n\n"+command+"\n")
+    if(groupname==None):
+	submission = "qsub -cwd -S /bin/bash -l s_vmem=8G -l mem_req=8 -N "+thisjob+" -hold_jid "+previousjob+" "+scriptname
+    else:
+	submission = "qsub -cwd -S /bin/bash -l s_vmem=8G -l mem_req=8 -N "+thisjob+" -hold_jid	"+groupname+" "+scriptname
     script.close()
-    submission = "qsub -cwd -S /bin/bash -l s_vmem=8G -l mem_req=8 -N "+thisjob+" -hold_jid "+previousjob+" "+scriptname
     logging.debug(submission)
     subprocess.call(submission,shell=True)
 
