@@ -11,13 +11,12 @@ import pysam
 import os
 
 ## Define some globals
-#listofsnps = "/home/chris_w/resources/idtestsnps/6668.id.snps.b37.txt"
-listofsnps = "/home/chris_w/resources/idtestsnps/6668.id.snps.b37.tiny.txt"
+listofsnps = "/home/chris_w/resources/idtestsnps/6668.id.snps.b37.txt"
 
 ## Parse command line options
 parser = argparse.ArgumentParser()
-parser.add_argument("-n", type=str, help="full path to normal BAM",required=False)
-parser.add_argument("-t", type=str, help="full path to tumour BAM",required=False)
+parser.add_argument("-n", type=str, help="full path to normal BAM",required=True)
+parser.add_argument("-t", type=str, help="full path to tumour BAM",required=True)
 parser.add_argument("--debug", help="Turn debugging mode on",action="store_true")
 args = parser.parse_args()
 
@@ -26,20 +25,15 @@ if(args.debug):
     logging.basicConfig(level=logging.DEBUG)
     logging.debug("Debugging mode enabled")
 
-args.n="/home/chris_w/project_bile_duct_cancer/analysed_data/HK02_L/dedup/dedup.bam"
-args.t="/home/chris_w/project_bile_duct_cancer/analysed_data/HK02_c/dedup/dedup.bam"
-
 def main():
     try:
 	
 	## Overwrite existing output files with empty files
-	#clearoutput(args.n)
-	#clearoutput(args.t)
+	clearoutput(args.n)
+	clearoutput(args.t)
 	## Iterate through the list of SNPs to check..
 	snpiterate()
 	
-
-
     except:
 	logging.exception("Error in main")
 	sys.exit()
@@ -50,12 +44,10 @@ def clearoutput(path):
     if os.path.exists(file):
 	os.remove(file)
 
-def basecounter(bam,CHROM,POS):
+def basecounter(bam,CHROM,POS,samfile):
     try:
 	## Dict to hold counts of each base
 	basecount={"A":0,"C":0,"G":0,"T":0,"N":0}
-	## Open the bam file
-	samfile=pysam.Samfile(bam,"rb") # rb = "read bam"
 	for alignedread in samfile.fetch(CHROM,POS,POS+1):
 	    if(alignedread.is_proper_pair):
 		## Which base in the read is at the position we want?
@@ -73,6 +65,12 @@ def basecounter(bam,CHROM,POS):
 
 def snpiterate():
     try:
+
+	## Open bam files for reading - opening the bam files is the major speed bottleneck
+	## Open ONCE here for massive speed increase
+	normalsamfile=pysam.Samfile(args.n,"rb") # rb = "read bam"
+	tumoursamfile=pysam.Samfile(args.t,"rb") # rb = "read bam"
+
 	## A dictionary to store all the results in
 	judgements={"MATCH":0,"MISMATCH":0,"FAIL":0}
 	for row in csv.reader(open(listofsnps),delimiter="\t"):
@@ -84,8 +82,8 @@ def snpiterate():
 	    snpid=row[5]
 
 	    ## Fetch counts of each base at SNV location
-	    normalcounts=basecounter(args.n,CHROM,POS)
-	    tumourcounts=basecounter(args.t,CHROM,POS)
+	    normalcounts=basecounter(args.n,CHROM,POS,normalsamfile)
+	    tumourcounts=basecounter(args.t,CHROM,POS,tumoursamfile)
 
 	    ## Perform some calculations
 	    normaldepth=sum(normalcounts.values())
@@ -102,11 +100,15 @@ def snpiterate():
 		judgement=alleletest(nallele,tallele)
 		judgements[judgement]+=1
 		## Write raw data to normal and tumour dirs
-		#writeallele(args.n,snpid,nallele,allele1,allele2)
-		#writeallele(args.t,snpid,tallele,allele1,allele2)
+		writeallele(args.n,snpid,nallele,allele1,allele2)
+		writeallele(args.t,snpid,tallele,allele1,allele2)
 	## Write summary to tumour dir
-	#writejudgement(judgements)
-	print judgements
+	writejudgement(judgements)
+	logging.debug(judgements)
+
+	## Close bam files here
+	normalsamfile.close()
+	tumoursamfile.close()
 
     except:
 	logging.exception("Error in snpiterate")
