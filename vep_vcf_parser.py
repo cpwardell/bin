@@ -97,9 +97,15 @@ for record in vcf_reader:
 	ref=record.REF
 	alt=str(record.ALT[0])
 	
+	## Raw VCF files from ensembl site might have NO format line
 	## Only SNV files have AD in the format
 	## Only INDEL files have a TAR in the format
-	if "AD" in record.FORMAT:
+	if record.FORMAT==None:
+	    refcountt="0"
+	    altcountt="0"
+	    refcountn="0"
+	    altcountn="0"
+	elif "AD" in record.FORMAT:
 	    refcountt=str(record.samples[1]['AD'][0])
 	    altcountt=str(record.samples[1]['AD'][1])
 	    refcountn=str(record.samples[0]['AD'][0])

@@ -2,6 +2,12 @@
 
 # We're going to take a file as input, then hunt for the appropriate files on nearline disk
 # Then we're going to copy them to a local directory
+
+## The input text file should have 3 columns:
+## 1st is sample name, 2nd is string in fastq file, 3rd is flowcell
+## HK02_c  HK_Exome_Lib_pool_Set_2_c_20131010_05   BC2FBFACXX
+
+
 ## Import modules
 import logging
 import argparse

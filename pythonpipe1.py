@@ -72,6 +72,9 @@ def main():
 	    dedup()
 	if "6" in args.p:
 	    metrics()
+	
+	## This bash command ould clean up
+	# rm -rf align cutadapt sort split
 
     except:
 	logging.exception("Error in main method")
@@ -88,8 +91,8 @@ def splitter():
         fastqs=thesefiles(directory,".bz2")
 	for fastq in fastqs:
 	    if args.wgs:
-                splitcommand = "bzcat "+directory+"/"+fastq+" | split -l 200000000 - "+fastq+"\n"+\
-                "FILES=* ; for FILE in $FILES ; do mv $FILE $FILE.fastq ; done"
+                splitcommand = "bzcat "+directory+"/"+fastq+" | split -l 200000000 - "+fastq+"\n"#+\
+                #"FILES=* ; for FILE in $FILES ; do mv $FILE $FILE.fastq ; done"
                 logging.debug(splitcommand)
                 jobsubmit(splitcommand,"split.sh","nowait")
             else:
