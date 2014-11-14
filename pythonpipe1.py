@@ -50,7 +50,9 @@ if args.wgs:
     exome = "/home/chris_w/resources/bedfiles/genomic_features/whole_genome_b37d5.bed"
 else:
     #exome = "/home/chris_w/resources/bedfiles/agilent/sureselect/SureSelectV5_target_only.bed"
-    exome = "/home/chris_w/resources/bedfiles/agilent/sureselect/SureSelectV5_target_only.ext100.bed"
+    #exome = "/home/chris_w/resources/bedfiles/agilent/sureselect/SureSelectV5_target_only.ext100.bed"
+    exome="/home/chris_w/resources/bedfiles/illumina/nextera/Nextera.Rapid.Capture.Exome.targeted.regions.manifest.bed"
+
 
 ## MAIN ##
 def main():

@@ -11,7 +11,7 @@ from operator import itemgetter
 parser = argparse.ArgumentParser()
 parser.add_argument("--debug", help="Turn logging on",action="store_true")
 parser.add_argument("--print_all", help="Output ALL annotations",action="store_true")
-parser.add_argument("-v", type=str, help="full path to input vcf",required=False)
+parser.add_argument("-v", type=str, help="full path to input vcf",required=True)
 args = parser.parse_args()
 
 ## Turn logging on if desired
