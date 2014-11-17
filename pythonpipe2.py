@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-n", type=str, help="Full path to input normal bam",required=True)
 parser.add_argument("-t", type=str, help="Full path to input normal bam",required=True)
 parser.add_argument("-p", type=str, help="Command string details here...",default="123",required=False)
-parser.add_argument("--wgs", help="Use for whole genome sequencing (WGS)",action="store_true")
+#parser.add_argument("--wgs", help="Use for whole genome sequencing (WGS)",action="store_true")
 parser.add_argument("--debug", help="Turn debugging mode on",action="store_true")
 args = parser.parse_args()
 
@@ -35,7 +35,7 @@ cosmic="/home/chris_w/resources/cosmic/CosmicCodingMuts.vcf"
 dbsnp="/home/chris_w/resources/b37/dbsnp_138.b37.vcf"
 #exome="/home/chris_w/resources/bedfiles/agilent/sureselect/SureSelectV5_target_only.bed"
 #exome="/home/chris_w/resources/bedfiles/agilent/sureselect/SureSelectV5_target_only.ext100.bed"
-exome="/home/chris_w/resources/bedfiles/illumina/nextera/Nextera.Rapid.Capture.Exome.targeted.regions.manifest.bed"
+#exome="/home/chris_w/resources/bedfiles/illumina/nextera/Nextera.Rapid.Capture.Exome.targeted.regions.manifest.bed" # THIS IS THE CURRENT DEFAULT EXOME
 #exome="/home/chris_w/resources/bedfiles/illumina/nextera/Nextera.Rapid.Capture.Exome.targeted.regions.manifest.ext100.bed"
 #exome="/home/chris_w/resources/bedfiles/illumina/nextera/Nextera.Rapid.Capture.Exome.targeted.regions.manifest.v1.2.bed"
 #exome="/home/chris_w/resources/bedfiles/illumina/nextera/Nextera.Rapid.Capture.Exome.targeted.regions.manifest.v1.2.ext100.bed"
@@ -99,10 +99,10 @@ def mutect():
 
 	## If WGS, perform discovery on whole genome
 	## Otherwise, restrict to exome only
-	if args.wgs:
-	    intervals=""
-	else:
-	    intervals=" --intervals "+exome
+	#if args.wgs:
+	#    intervals=""
+	#else:
+	#    intervals=" --intervals "+exome
 
 	## MuTect command.  Note additional environment variable export
 	## to override the Java memory limits
@@ -115,18 +115,18 @@ def mutect():
 	" --reference_sequence "+reference+\
 	" --cosmic "+cosmic+\
 	" --dbsnp "+dbsnp+\
-	" "+intervals+\
 	" --input_file:normal "+args.n+\
 	" --input_file:tumor "+args.t+\
 	" -vcf mutect.vcf"+\
 	" --out call_stats.out ; "+\
 	" grep ^# mutect.vcf > mutect.filtered.vcf ; "+\
 	" grep -v ^# mutect.vcf | grep PASS >> mutect.filtered.vcf ;"+\
-	"/home/chris_w/apps/ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl -i mutect.filtered.vcf --cache --offline --everything --vcf -o mutect.filtered.vep.vcf ; "+\
-	"/home/chris_w/bin/vep_vcf_parser.py -v mutect.filtered.vep.vcf > mutect.filtered.vep.parsed.txt"
+	" /home/chris_w/apps/ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl -i mutect.filtered.vcf --cache --offline --everything --vcf -o mutect.filtered.vep.vcf ; "+\
+	" /home/chris_w/bin/vep_vcf_parser.py -v mutect.filtered.vep.vcf > mutect.filtered.vep.parsed.txt ; "+\
+	" /home/chris_w/bin/metalfox.py -f1 call_stats.out -f3 "+args.t+" > call_stats.postfox.out ; "
+	" rm call_stats.out mutect.vcf mutect.vcf.idx " # remove enormous raw files
 	logging.debug(mutectcommand)
 	jobsubmit(mutectcommand,"mutect.sh")
-
 	os.chdir("..")
     except:
 	logging.exception("Error in mutect")

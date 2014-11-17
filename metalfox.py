@@ -34,7 +34,6 @@ import pybedtools
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", type=str, help="full path to exome directory",required=False)
 parser.add_argument("-f1", type=str, help="full path to MuTect call_stats.out file",required=False)
-parser.add_argument("-f2", type=str, help="full path to MuTect vcf;",required=False)
 parser.add_argument("-f3", type=str, help="full path to bam",required=False)
 parser.add_argument("--debug", help="Turn debugging mode on",action="store_true")
 args = parser.parse_args()
@@ -44,24 +43,20 @@ if(args.debug):
     logging.basicConfig(level=logging.DEBUG)
     logging.debug("Debugging mode enabled")
 
-## If args.f is supplied, infer args.f1,args.f2,args.f3
+## If args.f is supplied, infer args.f1,args.f3
 if(args.f!=None):
     args.f1 = os.path.join(args.f,"mutect/call_stats.out")
-    args.f2 = os.path.join(args.f,"mutect/mutect.filtered.vep.vcf")
     args.f3 = os.path.join(args.f,"dedup/dedup.bam")
 
-## If args.f1,args.f2,args.f3 don't exist by this point, they haven't been explicitly supplied 
+## If args.f1 and args.f3 don't exist by this point, they haven't been explicitly supplied 
 ## or inferred, so warn the user and exit
-if(args.f1==None and args.f2==None and args.f3==None):
-    print "You must supply EITHER the -f OR -f1,-f2,-f3 arguments"
+if(args.f1==None and args.f3==None):
+    print "You must supply EITHER the -f OR -f1, -f3 arguments"
     sys.exit()
 
 ## Check files exist.  If they don't, warn user and exit
 if not os.path.isfile(args.f1):
     print args.f1+" does not exist"
-    sys.exit()
-if not os.path.isfile(args.f2):
-    print args.f2+" does not exist"
     sys.exit()
 if not os.path.isfile(args.f3):
     print args.f3+" does not exist"
