@@ -9,10 +9,10 @@
 ## It calculates the following metrics with these limits:
 
 # COMPLETE ## FoxoG must pass for C>A|G>T SNVs (see further details below) - using Pysam
-# UNCERTAIN ## Minimum of 1 ALT read in each direction - using Pysam
+# UNCERTAIN IF WORKING ## Minimum of 1 ALT read in each direction - using Pysam
 # COMPLETE ## Mean Phred base quality must be > 26 - using Pysam
 # COMPLETE ## Mean mapping quality must be >= 50 - using Pysam
-# COMPLETE ## Alignability at site must be 1 - using Pybedtools
+# COMPLETE ## Alignability at site must be 1 - using Pysam
 
 ## Full FoxoG explanation:
 ## Use this with the MuTect tumor_lod and filter appropriately, as described in Costello et al 2013:
