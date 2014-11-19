@@ -113,7 +113,7 @@ def cutadapt():
     dircreate("cutadapt")
     decompressedfiles=[]
     if args.wgs:
-	decompressedfiles = os.listdir("../split/")
+	decompressedfiles = thesefiles("../split/","fastq")
     else:
 	for directory in args.i:
 	    decompressedfiles += thesefiles(directory,".bz2")
