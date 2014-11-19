@@ -33,7 +33,7 @@ for row in csv.reader(open(args.i),delimiter="\t"):
     sample=row[0]
     id=row[1]
     flowcell=row[2]
-
+    logging.debug("Sample: "+sample+"\tID: "+id+"\tFlowcell: "+flowcell)
     ## Go hunting for the files we want
     potentials=[]
     fastqs=[]
