@@ -93,8 +93,8 @@ def splitter():
         fastqs=thesefiles(directory,".bz2")
 	for fastq in fastqs:
 	    if args.wgs:
-                splitcommand = "bzcat "+directory+"/"+fastq+" | split -l 200000000 - "+fastq+"\n"#+\
-                #"FILES=* ; for FILE in $FILES ; do mv $FILE $FILE.fastq ; done"
+                splitcommand = "bzcat "+directory+"/"+fastq+" | split -l 200000000 - "+fastq+"\n"+\
+                "FILES="+fastq+"* ; for FILE in $FILES ; do mv $FILE $FILE.fastq ; done"
                 logging.debug(splitcommand)
                 jobsubmit(splitcommand,"split.sh","nowait")
             else:
@@ -120,8 +120,6 @@ def cutadapt():
     ones=[]
     twos=[]
 
-    import sys
-
     for file in decompressedfiles:
         if "1.fastq" in file:
 	    ones.append(file)
@@ -129,9 +127,10 @@ def cutadapt():
 	    twos.append(file)
     ones.sort()
     twos.sort()
-    
-    ones=[one.replace(".bz2","") for one in ones]
-    twos=[two.replace(".bz2","") for two in twos]
+
+    if not args.wgs:
+	ones=[one.replace(".bz2","") for one in ones]
+	twos=[two.replace(".bz2","") for two in twos]
 
     for idx,one in enumerate(ones):
         logging.debug(one+"\t"+twos[idx])

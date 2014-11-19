@@ -122,9 +122,11 @@ def mutect():
 	" grep ^# mutect.vcf > mutect.filtered.vcf ; "+\
 	" grep -v ^# mutect.vcf | grep PASS >> mutect.filtered.vcf ;"+\
 	" /home/chris_w/apps/ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl -i mutect.filtered.vcf --cache --offline --everything --vcf -o mutect.filtered.vep.vcf ; "+\
+	" source /home/chris_w/apps/virtualpythonenvironment/bin/activate ; "+\
 	" /home/chris_w/bin/vep_vcf_parser.py -v mutect.filtered.vep.vcf > mutect.filtered.vep.parsed.txt ; "+\
 	" /home/chris_w/bin/metalfox.py -f1 call_stats.out -f3 "+args.t+" > call_stats.postfox.out ; "
-	" rm call_stats.out mutect.vcf mutect.vcf.idx " # remove enormous raw files
+	" rm call_stats.out mutect.vcf mutect.vcf.idx ; "+\
+	" deactivate " 
 	logging.debug(mutectcommand)
 	jobsubmit(mutectcommand,"mutect.sh")
 	os.chdir("..")
