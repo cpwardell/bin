@@ -169,8 +169,9 @@ def align():
 	ones.sort()
 	twos.sort()
 
-	ones=[one.replace(".bz2","") for one in ones]
-	twos=[two.replace(".bz2","") for two in twos]
+	if not args.wgs:
+	    ones=[one.replace(".bz2","") for one in ones]
+	    twos=[two.replace(".bz2","") for two in twos]
 
     for idx,one in enumerate(ones):
 	logging.debug(one+"\t"+twos[idx])
