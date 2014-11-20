@@ -114,21 +114,28 @@ def cutadapt():
     decompressedfiles=[]
     if args.wgs:
 	decompressedfiles = thesefiles("../split/","fastq")
+	ones=[]
+	twos=[]
+	for file in decompressedfiles:
+	    if "1.fastq" in file:
+		ones.append(file)
+	    else:
+		twos.append(file)
+	ones.sort()
+	twos.sort()
     else:
 	for directory in args.i:
 	    decompressedfiles += thesefiles(directory,".bz2")
-    ones=[]
-    twos=[]
+	ones=[]
+        twos=[]
 
-    for file in decompressedfiles:
-        if "1.fastq" in file:
-	    ones.append(file)
-	else:
-	    twos.append(file)
-    ones.sort()
-    twos.sort()
-
-    if not args.wgs:
+	for file in decompressedfiles:
+	    if "1.fastq" in file:
+		ones.append(file)
+	    else:
+		twos.append(file)
+	ones.sort()
+	twos.sort()
 	ones=[one.replace(".bz2","") for one in ones]
 	twos=[two.replace(".bz2","") for two in twos]
 
@@ -153,25 +160,31 @@ def cutadapt():
 def align():
     dircreate("align")
     trimmedfiles=[]
-    #trimmedfiles = os.listdir("../cutadapt/")
     if args.wgs:
-	trimmedfiles = os.listdir("../split/")
+	trimmedfiles = thesefiles("../cutadapt/","gz")
+	ones=[]
+	twos=[]
+	for file in trimmedfiles:
+	    if "1.fastq" in file:
+		ones.append(file)
+	    else:
+		twos.append(file)
+	ones.sort()
+	twos.sort()
     else:
 	for directory in args.i:
 	    trimmedfiles += thesefiles(directory,".bz2")
-    ones=[]
-    twos=[]
-    for file in trimmedfiles:
-	if "1.fastq" in file:
-	    ones.append(file+".trimmed.gz")
-        else:
-	    twos.append(file+".trimmed.gz")
+	ones=[]
+	twos=[]
+	for file in trimmedfiles:
+	    if "1.fastq" in file:
+		ones.append(file+".trimmed.gz")
+            else:
+	        twos.append(file+".trimmed.gz")
 	ones.sort()
 	twos.sort()
-
-	if not args.wgs:
-	    ones=[one.replace(".bz2","") for one in ones]
-	    twos=[two.replace(".bz2","") for two in twos]
+	ones=[one.replace(".bz2","") for one in ones]
+	twos=[two.replace(".bz2","") for two in twos]
 
     for idx,one in enumerate(ones):
 	logging.debug(one+"\t"+twos[idx])
