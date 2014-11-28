@@ -121,12 +121,11 @@ def mutect():
 	" --out call_stats.out ; "+\
 	" grep ^# mutect.vcf > mutect.filtered.vcf ; "+\
 	" grep -v ^# mutect.vcf | grep PASS >> mutect.filtered.vcf ;"+\
-	" /home/chris_w/apps/ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl -i mutect.filtered.vcf --cache --offline --everything --vcf -o mutect.filtered.vep.vcf ; "+\
+	" /home/chris_w/apps/ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl -i mutect.filtered.vcf --cache --offline --everything -o mutect.filtered.vep.txt ; "+\
 	" source /home/chris_w/apps/virtualpythonenvironment/bin/activate ; "+\
-	" /home/chris_w/bin/vep_vcf_parser.py -v mutect.filtered.vep.vcf > mutect.filtered.vep.parsed.txt ; "+\
 	" /home/chris_w/bin/metalfox.py -f1 call_stats.out -f3 "+args.t+" > call_stats.postfox.out ; "
 	" rm call_stats.out mutect.vcf mutect.vcf.idx ; "+\
-	" deactivate " 
+	" deactivate "
 	logging.debug(mutectcommand)
 	jobsubmit(mutectcommand,"mutect.sh")
 	os.chdir("..")
@@ -163,11 +162,9 @@ def strelka():
 	    " --output-dir=strelka ; "+\
 	    " cd strelka ; make ; "+\
 	    " mv results/* . ; rm -rf Makefile chromosomes config results ; "+\
-	    "/home/chris_w/apps/ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl "+\
+	    " /home/chris_w/apps/ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl "+\
 	    " -i passed.somatic.indels.vcf "+\
-	    " --cache --offline --everything --vcf -o passed.somatic.indels.vep.vcf ; "+\
-	    " /home/chris_w/bin/vep_vcf_parser.py -v "+\
-	    " passed.somatic.indels.vep.vcf > passed.somatic.indels.vep.parsed.txt"
+	    " --cache --offline --everything -o passed.somatic.indels.vep.txt ; "
 	    logging.debug(strelkacommand)
 	    jobsubmit(strelkacommand,"strelka.sh")
 

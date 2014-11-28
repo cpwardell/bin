@@ -159,7 +159,9 @@ for idx,row in enumerate(csv.reader(open(args.f1),delimiter="\t")):
 		FoxoG = F2R1/(F1R2 + F2R1)
 	    if(REF=="G"):
 		FoxoG = F1R2/(F1R2 + F2R1)
-
+	## If FoxoG is still "NA" at this point, it must be rubbish, so set it to 1
+	if(FoxoG=="NA"):
+	    FoxoG=1
 	#score=-19+(100/2)*FoxoG
 	score=-10+(100/3)*FoxoG
 	#logging.debug("\t".join([str(FoxoG),str(T_LOD_FSTAR),str(score)]))
