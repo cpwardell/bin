@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-n", type=str, help="Full path to input normal bam",required=True)
 parser.add_argument("-t", type=str, help="Full path to input normal bam",required=True)
 parser.add_argument("-p", type=str, help="Command string details here...",default="123",required=False)
-#parser.add_argument("--wgs", help="Use for whole genome sequencing (WGS)",action="store_true")
+parser.add_argument("--wgs", help="Use for whole genome sequencing (WGS)",action="store_true")
 parser.add_argument("--debug", help="Turn debugging mode on",action="store_true")
 args = parser.parse_args()
 
@@ -31,19 +31,18 @@ uid = str(random.random())[2:8] # A 6-digit random integer
 java="/home/chris_w/apps/jre1.7.0_67/bin/java"
 mutectjar = "/home/chris_w/apps/mutect-src/mutect/target/mutect-1.1.7.jar"
 reference="/home/chris_w/resources/b37/human_g1k_v37.fasta"
+refchroms="/home/chris_w/resources/b37/chroms/"
 cosmic="/home/chris_w/resources/cosmic/CosmicCodingMuts.vcf"
 dbsnp="/home/chris_w/resources/b37/dbsnp_138.b37.vcf"
-#exome="/home/chris_w/resources/bedfiles/agilent/sureselect/SureSelectV5_target_only.bed"
-#exome="/home/chris_w/resources/bedfiles/agilent/sureselect/SureSelectV5_target_only.ext100.bed"
-#exome="/home/chris_w/resources/bedfiles/illumina/nextera/Nextera.Rapid.Capture.Exome.targeted.regions.manifest.bed" # THIS IS THE CURRENT DEFAULT EXOME
-#exome="/home/chris_w/resources/bedfiles/illumina/nextera/Nextera.Rapid.Capture.Exome.targeted.regions.manifest.ext100.bed"
-#exome="/home/chris_w/resources/bedfiles/illumina/nextera/Nextera.Rapid.Capture.Exome.targeted.regions.manifest.v1.2.bed"
-#exome="/home/chris_w/resources/bedfiles/illumina/nextera/Nextera.Rapid.Capture.Exome.targeted.regions.manifest.v1.2.ext100.bed"
 tempdir="/home/chris_w/tmp/"
 previousjob = "no_previous_job"
 tumourrg=""
 idtestscript="/home/chris_w/bin/idtest.py"
 strelkadir="/home/chris_w/apps/strelka/"
+
+## List of chromosomes:
+chroms=map(str,range(1,23))
+chroms=chroms+["X","Y"]
 
 # Steps to implement:
 # ID test - COMPLETE
@@ -77,15 +76,13 @@ def jobsubmit(command,scriptname,groupname=None):
     ## Write and submit script
     script = open(scriptname,"w")
     script.write("#!/bin/bash\n\n"+command+"\n")
-    #if(groupname==None):
-#	submission = "qsub -cwd -S /bin/bash -l s_vmem=8G -l mem_req=8 -N "+\
-#	thisjob+" -hold_jid "+previousjob+" "+scriptname
- #   else:
-#	submission = "qsub -cwd -S /bin/bash -l s_vmem=8G -l mem_req=8 -N "+\
-#	thisjob+"-hold_jid "+groupname+" "+scriptname
     ## Jobs in this pipeline don't wait; they just execute ASAP
-    submission = "qsub -cwd -S /bin/bash -l s_vmem=8G -l mem_req=8 -N "+\
-    thisjob+" "+scriptname
+    ## Strelka jobs are submitted with default RAM, but 6 cores for speed
+    if scriptname == "strelka.sh":
+	qsub = "qsub -cwd -S /bin/bash -pe def_slot 6 -N "
+    else:
+	qsub = "qsub -cwd -S /bin/bash -l s_vmem=8G -l mem_req=8 -N "
+    submission = qsub+thisjob+" "+scriptname
     script.close()
     logging.debug(submission)
     subprocess.call(submission,shell=True)
@@ -97,37 +94,31 @@ def mutect():
     try:
 	dircreate("mutect")
 
-	## If WGS, perform discovery on whole genome
-	## Otherwise, restrict to exome only
-	#if args.wgs:
-	#    intervals=""
-	#else:
-	#    intervals=" --intervals "+exome
-
 	## MuTect command.  Note additional environment variable export
 	## to override the Java memory limits
 	## Note additional command which filters for only passing results
 	## This command also annotates using VEP
-	mutectcommand = "export JAVA_TOOL_OPTIONS=\"-XX:+UseSerialGC -Xmx4g -Djava=\""+\
-	tempdir+" ; "+java+\
-	" -Xmx4g -Djava.io.tmpdir="+tempdir+" -jar "+mutectjar+\
-	" --analysis_type MuTect "+\
-	" --reference_sequence "+reference+\
-	" --cosmic "+cosmic+\
-	" --dbsnp "+dbsnp+\
-	" --input_file:normal "+args.n+\
-	" --input_file:tumor "+args.t+\
-	" -vcf mutect.vcf"+\
-	" --out call_stats.out ; "+\
-	" grep ^# mutect.vcf > mutect.filtered.vcf ; "+\
-	" grep -v ^# mutect.vcf | grep PASS >> mutect.filtered.vcf ;"+\
-	" /home/chris_w/apps/ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl -i mutect.filtered.vcf --cache --offline --everything -o mutect.filtered.vep.txt ; "+\
-	" source /home/chris_w/apps/virtualpythonenvironment/bin/activate ; "+\
-	" /home/chris_w/bin/metalfox.py -f1 call_stats.out -f3 "+args.t+" > call_stats.postfox.out ; "
-	" rm call_stats.out mutect.vcf mutect.vcf.idx ; "+\
-	" deactivate "
-	logging.debug(mutectcommand)
-	jobsubmit(mutectcommand,"mutect.sh")
+	## Also, it executes individually for each chromosome
+	for chrom in chroms:
+	    mutectcommand = "export JAVA_TOOL_OPTIONS=\"-XX:+UseSerialGC -Xmx4g -Djava=\""+\
+	    tempdir+" ; "+java+\
+	    " -Xmx4g -Djava.io.tmpdir="+tempdir+" -jar "+mutectjar+\
+	    " --analysis_type MuTect "+\
+	    " --reference_sequence "+reference+\
+	    " --cosmic "+cosmic+\
+	    " --dbsnp "+dbsnp+\
+	    " --input_file:normal "+args.n+\
+	    " --input_file:tumor "+args.t+\
+	    " -vcf mutect."+chrom+".vcf"+\
+	    " --out call_stats."+chrom+".out "+\
+	    " --only_passing_calls "+\
+	    " -L "+chrom+" ; "+\
+	    "/home/chris_w/apps/ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl -i mutect."+chrom+".vcf --cache --offline --everything -o mutect."+chrom+".vep.txt ; "+\
+	    " source /home/chris_w/apps/virtualpythonenvironment/bin/activate ; "+\
+	    " /home/chris_w/bin/metalfox.py -f1 call_stats."+chrom+".out -f3 "+args.t+" > call_stats."+chrom+".postfox.out ; "
+	    " deactivate "
+	    logging.debug(mutectcommand)
+	    jobsubmit(mutectcommand,"mutect.sh")
 	os.chdir("..")
     except:
 	logging.exception("Error in mutect")
@@ -148,26 +139,20 @@ def idTest():
 
 def strelka():
     try:
-	## Check if strelka directory already exists; if so, Strelka will refuse to run
-	if os.path.isdir("strelka"):
-	    logging.debug("Strelka dir already exists; Strelka analysis will not be performed")
-	    pass
-	else:
-	    ## No need to create output directory, Strelka will do this for us
-	    strelkacommand=strelkadir+"/bin/configureStrelkaWorkflow.pl"+\
-	    " --normal="+args.n+\
-	    " --tumor="+args.t+\
-	    " --ref="+reference+\
-	    " --config="+strelkadir+"etc/strelka_config_bwa_exomes.ini"+\
-	    " --output-dir=strelka ; "+\
-	    " cd strelka ; make ; "+\
-	    " mv results/* . ; rm -rf Makefile chromosomes config results ; "+\
-	    " /home/chris_w/apps/ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl "+\
-	    " -i passed.somatic.indels.vcf "+\
-	    " --cache --offline --everything -o passed.somatic.indels.vep.txt ; "
-	    logging.debug(strelkacommand)
-	    jobsubmit(strelkacommand,"strelka.sh")
-
+	## No need to create output directory, Strelka will do this for us
+	strelkacommand=strelkadir+"/bin/configureStrelkaWorkflow.pl"+\
+        " --normal="+args.n+\
+	" --tumor="+args.t+\
+        " --ref="+reference+\
+	" --config="+strelkadir+"etc/strelka_config_bwa_exomes.ini"+\
+        " --output-dir=strelka ; "+\
+	" cd strelka ; make -j 6 ; "+\
+        " mv results/* . ; rm -rf Makefile chromosomes config results ; "+\
+        " /home/chris_w/apps/ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl "+\
+	" -i passed.somatic.indels.vcf "+\
+	" --cache --offline --everything -o passed.somatic.indels.vep.txt ; "
+	logging.debug(strelkacommand)
+        jobsubmit(strelkacommand,"strelka.sh")
     except:
 	logging.exception("Error in strelka")
 
