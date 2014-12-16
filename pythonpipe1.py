@@ -23,6 +23,7 @@ parser.add_argument("-a", type=str, help="RG ID tag (data ID) - e.g. unique ID",
 parser.add_argument("-p", type=str, help="1=cutadapt 2=split 3=align 4=sort 5=dedup 6=metrics",default="123456",required=False)
 parser.add_argument("--wgs", help="Use for whole genome sequencing (WGS)",action="store_true")
 parser.add_argument("--debug", help="Turn debugging mode on",action="store_true")
+parser.add_argument("--donotpurge", help="Prevents deletion of previous data as pipeline progresses",action="store_true")
 args = parser.parse_args()
 
 ## Turn logging on if desired
@@ -190,11 +191,14 @@ def align():
 	logging.debug(one+"\t"+twos[idx])
 	aligncommand=bwa+" mem -R \"@RG\\tID:"+args.a+"\\tSM:"+args.a+"\\t:ILLUMINA\" "+\
 	refgenome+" ../cutadapt/"+one+" ../cutadapt/"+twos[idx]+" > "+str(idx)+".sam\n"
+	if not args.donotpurge:
+	    aligncommand=aligncommand+"\nrm -r ../split \n"
 	logging.debug(aligncommand)
 	## Submit job
 	jobsubmit(aligncommand,"align.sh",args.a+"*cutadapt.sh*")
     ## Return to base dir
     os.chdir("..")
+
 
     #$BWA mem -R "@RG\tID:$OUTPUT\tSM:$OUTPUT\tPL:ILLUMINA" $INDEX $FORWARD $REVERSE > $OUTPUT.sam
 ## ALIGNMENT END ##
@@ -226,6 +230,8 @@ def sort():
     "MergeSamFiles.jar OUTPUT=merged.sorted.bam SORT_ORDER=coordinate "+\
     "CREATE_INDEX=TRUE USE_THREADING=false MAX_RECORDS_IN_RAM=1000000 "+\
     "VALIDATION_STRINGENCY=SILENT TMP_DIR="+scratchDir+inputblock
+    if not args.donotpurge:
+	sortcommand=sortcommand+"\nrm -r ../cutadapt \n"
     logging.debug("Sort command: "+sortcommand)
     
     ## Submit job
@@ -247,7 +253,8 @@ def dedup():
     "REMOVE_DUPLICATES=false ASSUME_SORTED=true CREATE_INDEX=true "+\
     "MAX_RECORDS_IN_RAM=1000000 VALIDATION_STRINGENCY=SILENT "+\
     "TMP_DIR="+scratchDir+" INPUT=../sort/merged.sorted.bam OUTPUT=dedup.bam"
-
+    if not args.donotpurge:
+	dedupcommand=dedupcommand+"\nrm -r ../align \n"
     ## Submit job
     jobsubmit(dedupcommand,"dedup.sh")
 
@@ -266,6 +273,8 @@ def metrics():
     "../dedup/dedup.bam"+\
     " -b "+exome+" | grep ^all > depth.ALL.txt\n"+\
     "Rscript "+rdepth+" depth.ALL.txt median"
+    if not args.donotpurge:
+	mediandepthcommand=mediandepthcommand+"\nrm -r ../sort \n"
     jobsubmit(mediandepthcommand,"mediandepth.sh")
     
     ## Only perform off-target calculation if there is a target exome
