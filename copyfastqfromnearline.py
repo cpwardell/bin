@@ -54,11 +54,12 @@ for row in csv.reader(open(args.i),delimiter="\t"):
     ## Make the list unique
     flowcellswithdual = list(set(flowcellswithdual))
 
+    ## We also want to get rid of "mismatch" data
     for potential in potentials:
 	if potential.split("/")[7] in flowcellswithdual:
 	    if "dual" in potential:
 		fastqs.append(potential)
-	else:
+	elif "mis" not in potential:
 	    fastqs.append(potential)
 
     ## Make the list unique
