@@ -59,14 +59,16 @@ def selector(chosen):
     scores=dict()
     for row in chosen:
 	for consequence in consequences.keys():
+	    #print row[6]
 	    if(consequence in row[6]):
 		scores[consequences[consequence]]=row
+    #print("SCORE LEN IS: "+str(len(scores)))
     topscore = sorted(scores.keys())[0]
     print "\t".join(scores[topscore]) ## THIS IS WHERE THE ANNOTATION IS PRINTED
 
 
 
-### END OF FUNCTIONS, BEGIN MAIN SCRIPTi ###########################################
+### END OF FUNCTIONS, BEGIN MAIN SCRIPT ###########################################
 
 ## Open txt file for reading and create an empty dictionary to store all annotations
 logging.debug("Opening text file")
@@ -80,6 +82,7 @@ for idx,row in enumerate(csv.reader(open(args.i),delimiter="\t")):
 	headercount+=1
     else:
 	rows[idx-headercount]=row
+logging.debug("Text file reading complete")
 
 ## Define some variables, including a dictionary used to score which effect is worst
 consequences={"transcript_ablation":1,
@@ -102,9 +105,11 @@ consequences={"transcript_ablation":1,
        "5_prime_UTR_variant":18,
        "3_prime_UTR_variant":19,
        "non_coding_transcript_exon_variant":20,
+       "non_coding_exon_variant":20,
        "intron_variant":21,
        "NMD_transcript_variant":22,
        "non_coding_transcript_variant":23,
+       "nc_transcript_variant":23,
        "upstream_gene_variant":24,
        "downstream_gene_variant":25,
        "TFBS_ablation":26,
