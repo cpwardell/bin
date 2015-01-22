@@ -151,7 +151,9 @@ def strelka():
         " mv results/* . ; rm -rf Makefile chromosomes config results ; "+\
         " /home/chris_w/apps/ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl "+\
 	" -i passed.somatic.indels.vcf "+\
-	" --cache --offline --everything -o passed.somatic.indels.vep.txt ; "
+	" --cache --offline --everything -o passed.somatic.indels.vep.txt ; "+\
+	" /home/chris_w/bin/woodfox.py -n1 args.n -t1 args.t -t2 ../strelka/passed.somatic.indels.vep.parsed.txt "+\
+	" > passed.somatic.indels.vep.parsed.postfox.txt " 
 	logging.debug(strelkacommand)
         jobsubmit(strelkacommand,"strelka.sh")
     except:
