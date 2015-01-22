@@ -55,14 +55,15 @@
 # ...........            ..  ... . ..     .  .....................................
 # .....   .              ..  .   . .    ...  . ...................................
 
-## Purpose: woodFox is our all-purpose indel filtering tool.
-## Accepts either an exome directory as input, or full paths to the Indelocator vcf and bam files
+## Purpose: woodFox is our indel filtering tool.
+## Accepts either normal/tumour exome directories as input, or full paths to the relevant files
 ## It calculates the following metrics with these limits:
 
 ## Mapping quality; x >  50 : calculated using Pysam - COMPLETE
 ## Base quality; > 26 : calculated using Pysam - COMPLETE
 ## Not somatic (i.e. in normal); no more than 2 indel containing reads allowed : calculated with Pysam - COMPLETE
 ## Alignability at site must be 1 - using Pybedtools - COMPLETE
+## Number of SNVs/indels in the normal sample; should be <0.1 events per read - COMPLETE
 
 import sys # so we can exit the program
 import os # to check if directories exist
@@ -278,7 +279,6 @@ for idx,indel in enumerate(indels):
     try:
 	for record in alignfile.fetch(CHROM, POS, POS+1):
 	    alignability=float(record.split("\t")[3])
-	    print alignability
 	    alignabilities.append(alignability)
     except:
 	alignabilities.append(0)
@@ -293,11 +293,9 @@ for row in csv.reader(open(args.t2),delimiter="\t"):
     tabrow = "\t".join(row)
     # Skip all header rows
     if(row[0].startswith("#Uploaded")):
-	print
-	"\t".join([tabrow,"somaticindels","mean_mapq","mean_baseq","alignability","normaldepth","normalevents"])
+	print "\t".join([tabrow,"somaticindels","mean_mapq","mean_baseq","alignability","normaldepth","normalevents"])
     if(row[0].startswith("##")):
 	print tabrow
-    
     if not row[0].startswith("#"):
 	print "\t".join([tabrow,str(somaticindels[iter]),str(mapqualities[iter]),str(basequalities[iter]),str(alignabilities[iter]),str(sitedepths[iter]),str(totalevents[iter])])
 	iter+=1
