@@ -150,8 +150,43 @@ for row in csv.reader(open(args.t2),delimiter="\t"):
 		indels.append((row))
 
 
+## New test; define a window around the event and count the total number
+## of SNVs and the depth of the window in the NORMAL sample
+## This implies the reliability of the region in non-tumour samples
+## High scorers should be false positives
+sitedepths=[]
+totalevents=[]
+## Iterate through every indel 
+for indel in indels:
+    ## Set properties of indel
+    CHROM=indel[1].split(":")[0]
+    POS=int(indel[1].split(":")[1].split("-")[0])-1 # Pysam coordinates are ZERO-based, so we MUST subtract 1
+   
+    # Set the window size and reference genome
+    window=10
+    genome="/home/chris_w/resources/b37/human_g1k_v37.fasta"
 
-
+    # Produce a pileup of bam over the specified window
+    pile=pysam.mpileup("-f","/home/chris_w/resources/b37/human_g1k_v37.fasta","-r",CHROM+":"+str(POS-window)+"-"+str(POS+window),args.n1)
+    
+    # Count how many SNVs and indels are present
+    # Indel count is unreliable, e.g. a 3bp insertion could be "+3GAC" which is 4 characters
+    # However, this inaccuracy is acceptable as indels are arguably worse than SNVs when considering
+    # the reliability of a region
+    # We can ignore "^" and "$" characters, as they denote the start/end of reads
+    # Note that "^" is ALWAYS followed by another character, so we remove that, too
+    siteevents=0
+    sitedepth=0
+    sites=0
+    for site in pile:
+	bases=site.split("\t")
+	events=len(bases[4])-bases[4].count(".")-bases[4].count(",")-2*bases[4].count("^")-bases[4].count("$")
+	siteevents=siteevents+events
+	sitedepth=sitedepth+int(bases[3])
+	sites+=1
+    sitedepth=sitedepth/sites
+    sitedepths.append(sitedepth)
+    totalevents.append(siteevents)
 
 
 ## Look for reads at the same position in the normal sample; how many indel containing reads are there?
@@ -258,16 +293,14 @@ for row in csv.reader(open(args.t2),delimiter="\t"):
     tabrow = "\t".join(row)
     # Skip all header rows
     if(row[0].startswith("#Uploaded")):
-	print "\t".join([tabrow,"somaticindels","mean_mapq","mean_baseq","alignability"])
+	print
+	"\t".join([tabrow,"somaticindels","mean_mapq","mean_baseq","alignability","normaldepth","normalevents"])
     if(row[0].startswith("##")):
 	print tabrow
     
     if not row[0].startswith("#"):
-	print "\t".join([tabrow,str(somaticindels[iter]),str(mapqualities[iter]),str(basequalities[iter]),str(alignabilities[iter])])
+	print "\t".join([tabrow,str(somaticindels[iter]),str(mapqualities[iter]),str(basequalities[iter]),str(alignabilities[iter]),str(sitedepths[iter]),str(totalevents[iter])])
 	iter+=1
 
-print somaticindels
-print mapqualities
-print basequalities
-print alignabilities
+
 
