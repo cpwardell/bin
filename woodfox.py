@@ -77,7 +77,10 @@ import logging # For debugging purposes
 
 ## Mean function so we don't have to import numpy
 def mean(numbers):
-    x=float(sum(numbers))/len(numbers)
+    if(len(numbers)==0):
+	x=0
+    else:
+	x=float(sum(numbers))/len(numbers)
     return(x)
 
 ## Gather command line args
@@ -132,8 +135,8 @@ if not os.path.isfile(args.t1):
 	sys.exit()
 
 ## Echo arguments for debugging purposes
-logging.debug("args.n: "+args.n)
-logging.debug("args.t: "+args.t)
+#logging.debug("args.n: "+args.n)
+#logging.debug("args.t: "+args.t)
 
 
 ## Get coordinates of all indels and store them in an object - a list of tuples
@@ -162,7 +165,9 @@ for indel in indels:
     ## Set properties of indel
     CHROM=indel[1].split(":")[0]
     POS=int(indel[1].split(":")[1].split("-")[0])-1 # Pysam coordinates are ZERO-based, so we MUST subtract 1
-   
+    
+    logging.debug(str(CHROM)+":"+str(POS))
+
     # Set the window size and reference genome
     window=10
     genome="/home/chris_w/resources/b37/human_g1k_v37.fasta"
