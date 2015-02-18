@@ -45,7 +45,8 @@ def decider():
     ## Otherwise, decide which option is best by using the ordered ensembl annotation
     ## Stored here as the consequences dict
     if(len(chosen)==1):
-	print "\t".join(chosen[0]) ## THIS IS WHERE THE ANNOTATION IS PRINTED
+	print "\t".join(chosen[0]) ## THIS IS WHERE THE ANNOTATION IS PRINTED 1 OF 2
+	pass
     else:
 	selector(chosen) 
 
@@ -64,7 +65,7 @@ def selector(chosen):
 		scores[consequences[consequence]]=row
     #print("SCORE LEN IS: "+str(len(scores)))
     topscore = sorted(scores.keys())[0]
-    print "\t".join(scores[topscore]) ## THIS IS WHERE THE ANNOTATION IS PRINTED
+    print "\t".join(scores[topscore]) ## THIS IS WHERE THE ANNOTATION IS PRINTED 2 OF 2
 
 
 
@@ -83,6 +84,7 @@ for idx,row in enumerate(csv.reader(open(args.i),delimiter="\t")):
     else:
 	rows[idx-headercount]=row
 logging.debug("Text file reading complete")
+logging.debug(str(idx)+" rows in input file")
 
 ## Define some variables, including a dictionary used to score which effect is worst
 consequences={"transcript_ablation":1,
@@ -126,6 +128,7 @@ thatid=None
 canonicals=list()
 noncanonicals=list()
 ## Now we have the results in a dict, loop through them and print one annotation per variant
+logging.debug("Parsing "+str(len(rows.keys()))+" rows")
 for key in rows.keys():
     row=rows[key]
 
@@ -134,6 +137,7 @@ for key in rows.keys():
 
     ## If it's not the first row and the id is a new one, decide which row to print
     if(key!=0 and thisid != thatid):
+	logging.debug("Deciding on row "+str(key)+" and ID "+str(thatid))
 	decider()
 
     ## Append annotation to appropriate list
