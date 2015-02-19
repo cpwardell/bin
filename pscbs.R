@@ -56,11 +56,11 @@ fit <- callAB(fit, delta=deltaAB)
 #date() # 10 minutes
 fit = callLOH(fit, delta=estimateDeltaLOH(fit, midpoint=0.7)) ## midpoint=0.5 is default value
 #date() # instant
-kappa <- estimateKappa(fit)
-#date() # instant
-deltaCN <- estimateDeltaCN(fit, scale=1, kappa=kappa)
-#date() # instant
-fit <- callNTCN(fit, delta=deltaCN, verbose=-10)
+kappa = tryCatch(estimateKappa(fit),error=function(e){FALSE}) # No longer halts execution; silently proceeds
+if(is.numeric(kappa)){
+    deltaCN <- estimateDeltaCN(fit, scale=1, kappa=kappa)
+    fit <- callNTCN(fit, delta=deltaCN, verbose=-10)
+}
 #date() # 1 minute
 
 ## Plot and write to file - doesn't work on HPC, R compiled without Cairo support
