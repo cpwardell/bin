@@ -1,4 +1,4 @@
-#!/home/chris_w/apps/Python-2.7.8/python
+#!/usr/bin/env python2.7
 
 ## Purpose; we want to ingest the text output of the VEP and output a file with a SINGLE
 ## row per variant.  We select the canonical transcript(s) first and then output the one
