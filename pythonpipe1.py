@@ -269,29 +269,17 @@ def metrics():
     dircreate("metrics")
 
     ## Median depth    
-    mediandepthcommand = coveragebed+" -hist -abam "+\
-    "../dedup/dedup.bam"+\
-    " -b "+exome+" | grep ^all > depth.ALL.txt\n"+\
-    "Rscript "+rdepth+" depth.ALL.txt median"
+    mediandepthcommand = "samtools mpileup -l "+exome+\
+    " ../dedup/dedup.bam | awk '{print $4}' > pileup.txt\n"+\
+    "Rscript "+rdepth+" pileup.txt median "+exome+"\n"+
+    "rm pileup.txt\n"
     if not args.donotpurge:
 	mediandepthcommand=mediandepthcommand+"\nrm -r ../sort \n"
     jobsubmit(mediandepthcommand,"mediandepth.sh")
     
-    ## Only perform off-target calculation if there is a target exome
-    if not args.wgs:
-        ## Off-target sequencing
-        offtargetcommand = "NOTALIGNED=$(samtools view ../dedup/dedup.bam | awk '{if($3==\"*\"){print}}' | wc -l)\n"+\
-        "ONTARGET=$("+intersectbed+\
-        " -sorted -abam ../dedup/dedup.bam -b "+exome+" | samtools view - | wc -l)\n"+\
-        "RAWOFFTARGET=$("+intersectbed+" -sorted -v -abam ../dedup/dedup.bam -b "+exome+\
-        " | samtools view - | wc -l)\n"+\
-        "OFFTARGET=$(echo \"$RAWOFFTARGET-$NOTALIGNED\" | bc)\n"+\
-        "PERCENT=$(echo \"scale=2;$OFFTARGET*100/($ONTARGET+$OFFTARGET)\" | bc)\n"+\
-	"echo -e \"Unaligned reads:\t$NOTALIGNED\" > offtarget.txt\n"+\
-        "echo -e \"On target reads:\t$ONTARGET\" >> offtarget.txt\n"+\
-        "echo -e \"Off target reads:\t$OFFTARGET\" >> offtarget.txt\n"+\
-        "echo -e \"Off target percentage:\t$PERCENT\" >> offtarget.txt\n"
-        jobsubmit(offtargetcommand,"offtarget.sh")
+    ## Off-target sequencing
+    offtargetcommand = "/home/chris_w/bin/offtarget.sh"
+    jobsubmit(offtargetcommand,"offtarget.sh")
 
     ## Return to base dir
     os.chdir("..")
