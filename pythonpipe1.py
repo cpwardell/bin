@@ -271,7 +271,7 @@ def metrics():
     ## Median depth    
     mediandepthcommand = "samtools mpileup -l "+exome+\
     " ../dedup/dedup.bam | awk '{print $4}' > pileup.txt\n"+\
-    "Rscript "+rdepth+" pileup.txt median "+exome+"\n"+
+    "Rscript "+rdepth+" pileup.txt median "+exome+"\n"+\
     "rm pileup.txt\n"
     if not args.donotpurge:
 	mediandepthcommand=mediandepthcommand+"\nrm -r ../sort \n"
