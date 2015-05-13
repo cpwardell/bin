@@ -114,7 +114,6 @@ def mutect():
 	    " --only_passing_calls "+\
 	    " -L "+chrom+" ; "+\
 	    "/home/chris_w/apps/ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl -i mutect."+chrom+".vcf --cache --offline --everything -o mutect."+chrom+".vep.txt ; "+\
-	    " source /home/chris_w/.bashrc ; "+\
 	    " source /home/chris_w/apps/virtualpythonenvironment/bin/activate ; "+\
 	    " /home/chris_w/bin/metalfox.py -f1 call_stats."+chrom+".out -f3 "+args.t+" > call_stats."+chrom+".postfox.out ; "+\
 	    " /home/chris_w/bin/vep_txt_parser.py -i mutect."+chrom+".vep.txt > mutect."+chrom+".vep.parsed.txt ; "+\
@@ -153,7 +152,6 @@ def strelka():
         " /home/chris_w/apps/ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl "+\
 	" -i passed.somatic.indels.vcf "+\
 	" --cache --offline --everything -o passed.somatic.indels.vep.txt ; "+\
-	" source /home/chris_w/.bashrc ; "+\
 	" /home/chris_w/bin/vep_txt_parser.py -i passed.somatic.indels.vep.txt > passed.somatic.indels.vep.parsed.txt ; "+\
 	" /home/chris_w/bin/woodfox.py -n1 args.n -t1 args.t -t2 ../strelka/passed.somatic.indels.vep.parsed.txt "+\
 	" > passed.somatic.indels.vep.parsed.postfox.txt " 
