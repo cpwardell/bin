@@ -79,9 +79,11 @@ def jobsubmit(command,scriptname,groupname=None):
     ## Jobs in this pipeline don't wait; they just execute ASAP
     ## Strelka jobs are submitted with default RAM, but 6 cores for speed
     if scriptname == "strelka.sh":
-	qsub = "qsub -cwd -S /bin/bash -pe def_slot 6 -N "
+	#qsub = "qsub -cwd -S /bin/bash -pe def_slot 6 -N " old values
+	qsub = "qsub -cwd -S /bin/bash -pe def_slot 6 -N " # Shirokane3 values
     else:
-	qsub = "qsub -cwd -S /bin/bash -l s_vmem=8G -l mem_req=8 -N "
+	#qsub = "qsub -cwd -S /bin/bash -l s_vmem=8G -l mem_req=8 -N " # old values
+	qsub = "qsub -cwd -S /bin/bash -l s_vmem=32G -l mem_req=32G -N " # Shirokane 3 values
     submission = qsub+thisjob+" "+scriptname
     script.close()
     logging.debug(submission)

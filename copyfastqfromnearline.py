@@ -38,7 +38,8 @@ for row in csv.reader(open(args.i),delimiter="\t"):
     ## Go hunting for the files we want
     potentials=[]
     fastqs=[]
-    for root, dirs, files in os.walk("/near/data/icgc_cgm/data/solexa"):
+    #for root, dirs, files in os.walk("/near/data/icgc_cgm/data/solexa"):
+    for root, dirs, files in os.walk("/archive/data/icgc_cgm/premium_nearline/data/solexa"):
 	for file in files:
 	    if row[1] in file and "checksum" not in root:
 		potentials.append(os.path.join(root,file))

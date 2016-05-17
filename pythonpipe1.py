@@ -52,7 +52,9 @@ if args.wgs:
 else:
     #exome = "/home/chris_w/resources/bedfiles/agilent/sureselect/SureSelectV5_target_only.bed"
     #exome = "/home/chris_w/resources/bedfiles/agilent/sureselect/SureSelectV5_target_only.ext100.bed"
-    exome="/home/chris_w/resources/bedfiles/illumina/nextera/Nextera.Rapid.Capture.Exome.targeted.regions.manifest.bed"
+    exome="/home/chris_w/resources/bedfiles/illumina/nextera/Nextera.Rapid.Capture.Exome.targeted.regions.manifest.bed" # THIS IS THE CURRENT EXOME
+    #exome="/home/chris_w/resources/bedfiles/custom/validation_september2015/BDC_targets_1_Regions.bed" # Validation data
+    #exome="/home/chris_w/resources/bedfiles/custom/cfdna_october2015/156genes_V5probes/156genes_V5probes_Regions.bed" # 1MB targeted capture
 
 
 ## MAIN ##
@@ -294,9 +296,9 @@ def jobsubmit(command,scriptname,groupname=None):
     script = open(scriptname,"w")
     script.write("#!/bin/bash\n\n"+command+"\n")
     if(groupname==None):
-	submission = "qsub -cwd -S /bin/bash -l s_vmem=8G -l mem_req=8 -N "+thisjob+" -hold_jid "+previousjob+" "+scriptname
+	submission = "qsub -cwd -S /bin/bash -l s_vmem=32G -l mem_req=32G -N "+thisjob+" -hold_jid "+previousjob+" "+scriptname
     else:
-	submission = "qsub -cwd -S /bin/bash -l s_vmem=8G -l mem_req=8 -N "+thisjob+" -hold_jid	"+groupname+" "+scriptname
+	submission = "qsub -cwd -S /bin/bash -l s_vmem=32G -l mem_req=32G -N "+thisjob+" -hold_jid	"+groupname+" "+scriptname
     script.close()
     logging.debug(submission)
     subprocess.call(submission,shell=True)
